@@ -1,115 +1,110 @@
 package com.zab.designpatterns.responsibilitychain;
 
+import lombok.Data;
+
 import java.util.LinkedList;
 import java.util.List;
 
-public class ResponsibilityChain {
+public class ResponsibilityChain{
     public static void main(String[] args) {
-        Msg msg = new Msg();
-        msg.setName("一则消息");
-        msg.setData("大家好，我是<script>，fuck！！！ 996!!! ");
-        System.out.println(msg);
+        String source = "大家好，我是996，<script>fuck :)<script>";
+        Request request = new Request(source);
+        Response response = new Response(source);
 
+        //1、996 过滤为955
+        //2、js过滤
+        //3、fuck ****
+        //4、:)
         FilterChain filterChain = new FilterChain();
-        filterChain.addFilter(new CodeFilter()).addFilter(new SensitiveFilter());
-
-        FilterChain filterChain1 = new FilterChain();
-        filterChain1.addFilter(new NnsFilter()).addFilter(new RepeatFilter()).addFilter(filterChain);
-        filterChain1.doFilter(msg);
-
-        System.out.println(msg);
+        filterChain.addFilter(new NineNineSixFilter()).addFilter(new JsFilter())
+                .addFilter(new SensitiveFilter()).addFilter(new FaceFilter());
+        filterChain.doFilter(request,response,filterChain);
+        System.out.println(request.getData());
     }
 }
 
-interface Filter{
-    Msg doFilter(Msg msg);
+@Data
+class Request{
+    public Request(String data) {
+        this.data = data;
+    }
+
+    private String data;
+}
+@Data
+class Response{
+    public Response(String data) {
+        this.data = data;
+    }
+
+    private String data;
 }
 
-class CodeFilter implements Filter{
-    @Override
-    public Msg doFilter(Msg msg) {
-        String data = msg.getData();
-        String codeFilter = data.replaceAll("<","[").replaceAll(">","]");
-        msg.setData(codeFilter);
-        return msg;
-    }
-}
-
-class SensitiveFilter implements Filter{
-    @Override
-    public Msg doFilter(Msg msg) {
-        String data = msg.getData();
-        String sensitiveFilter = data.replaceAll("fuck","***");
-        msg.setData(sensitiveFilter);
-        return msg;
-    }
-}
-
-class NnsFilter implements Filter{
-    @Override
-    public Msg doFilter(Msg msg) {
-        String data = msg.getData();
-        String nnsFilter = data.replaceAll("996","朝九晚五");
-        msg.setData(nnsFilter);
-        return msg;
-    }
-}
-
-class RepeatFilter implements Filter{
-    @Override
-    public Msg doFilter(Msg msg) {
-        String data = msg.getData();
-        String repeatFilter = data.replaceAll("!!!","!");
-        msg.setData(repeatFilter);
-        return msg;
-    }
-}
 
 class FilterChain implements Filter{
-
     List<Filter> filters = new LinkedList<>();
-
+    public int index = 0;
     public FilterChain addFilter(Filter filter){
         filters.add(filter);
         return this;
     }
-
     @Override
-    public Msg doFilter(Msg msg) {
-        for (Filter filter: filters) {
-            filter.doFilter(msg);
+    public boolean doFilter(Request request,Response response,Filter filter) {
+        if(index == filters.size()){
+            return false;
         }
-        return msg;
+        Filter filter1 = filters.get(index);
+        index++;
+        return filter1.doFilter(request,response,this);
+    }
+}
+interface Filter{
+    boolean doFilter(Request request,Response response,Filter filter);
+}
+class NineNineSixFilter implements Filter{
+    @Override
+    public boolean doFilter(Request request,Response response,Filter filter) {
+        request.setData(request.getData().replaceAll("996","955"));
+        filter.doFilter(request,response,filter);
+        response.setData(response.getData().replaceAll("996","955"));
+        return true;
+    }
+}
+class JsFilter implements Filter{
+    @Override
+    public boolean doFilter(Request request,Response response,Filter filter) {
+        request.setData(request.getData().replaceAll("<","[").replaceAll(">","]"));
+        filter.doFilter(request,response,filter);
+        response.setData(response.getData().replaceAll("<","[").replaceAll(">","]"));
+        return true;
+    }
+}
+class SensitiveFilter implements Filter{
+    @Override
+    public boolean doFilter(Request request,Response response,Filter filter) {
+        if (request.getData().contains("fuck")){
+            return false;
+        }
+        request.setData(request.getData().replaceAll("fuck","****"));
+        filter.doFilter(request,response,filter);
+        response.setData(response.getData().replaceAll("fuck","****"));
+        return true;
+    }
+}
+class FaceFilter implements Filter{
+    @Override
+    public boolean doFilter(Request request,Response response,Filter filter) {
+        request.setData(request.getData().replaceAll(":\\)","^v^"));
+        filter.doFilter(request,response,filter);
+        response.setData(response.getData().replaceAll(":\\)","^v^"));
+        return true;
     }
 }
 
-
-
+@Data
 class Msg{
     private String name;
     private String data;
 
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getData() {
-        return data;
-    }
-
-    public void setData(String data) {
-        this.data = data;
-    }
-
-    @Override
-    public String toString() {
-        return "Msg{" +
-                "name='" + name + '\'' +
-                ", data='" + data + '\'' +
-                '}';
-    }
 }
+
