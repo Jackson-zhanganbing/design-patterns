@@ -7,7 +7,7 @@ import java.util.List;
 
 public class ResponsibilityChain{
     public static void main(String[] args) {
-        String source = "大家好，我是996，<script>fuck :)<script>";
+        String source = "hello, i am 996,fuck you ";
         Request request = new Request(source);
         Response response = new Response(source);
 
@@ -19,7 +19,7 @@ public class ResponsibilityChain{
         filterChain.addFilter(new NineNineSixFilter()).addFilter(new JsFilter())
                 .addFilter(new SensitiveFilter()).addFilter(new FaceFilter());
         filterChain.doFilter(request,response,filterChain);
-        System.out.println(request.getData());
+        System.out.println(response.getData());
     }
 }
 
@@ -82,7 +82,7 @@ class JsFilter implements Filter{
 class SensitiveFilter implements Filter{
     @Override
     public boolean doFilter(Request request,Response response,Filter filter) {
-        if (request.getData().contains("fuck")){
+        if (!request.getData().contains("fuck")){
             return false;
         }
         request.setData(request.getData().replaceAll("fuck","****"));
