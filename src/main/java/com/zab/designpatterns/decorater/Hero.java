@@ -1,6 +1,7 @@
 package com.zab.designpatterns.decorater;
 
 public interface Hero {
-	void attack();
-	void describe();
+    void attack();
+
+    void describe();
 }
